@@ -5,8 +5,8 @@ import (
 )
 
 func TestAppend(t *testing.T) {
-	h := NewHAMT()
-	_, err := Append(h, 5, 89)
+	h := NewHAMT[int]()
+	_, err := h.Append(5, 89)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
@@ -14,14 +14,14 @@ func TestAppend(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	h := NewHAMT()
-	h2, err := Append(h, 5, 89)
+	h := NewHAMT[int]()
+	h2, err := h.Append(5, 89)
 	if err != nil {
 		t.Errorf(err.Error())
 		return
 	}
 
-	d, err := Get[int](h2, 5)
+	d, err := h2.Get(5)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

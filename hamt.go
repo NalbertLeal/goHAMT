@@ -12,11 +12,6 @@ func NewHAMT[Data any]() *HAMT[Data] {
 	}
 }
 
-// implement of the the json.Marshaler interface
-func (h *HAMT[Data]) MarshalJSON() ([]byte, error) {
-	return []byte{}, nil
-}
-
 func (old *HAMT[Data]) Append(key uint32, data Data) (*HAMT[Data], error) {
 	if old == nil {
 		return nil, HAMTIsNilError
@@ -43,6 +38,7 @@ func (old *HAMT[Data]) Append(key uint32, data Data) (*HAMT[Data], error) {
 		nextH = nextH.data[index].(*node)
 	}
 
+	index = int(key) & MASK
 	nextH.data[index] = data
 
 	h.size = old.size + 1
@@ -127,6 +123,7 @@ func (h *HAMT[Data]) Get(key uint32) (Data, error) {
 		nextH = nextH.data[index].(*node)
 	}
 
+	index = int(key) & MASK
 	if nextH.data[index] == nil {
 		return result, DataNotFoundError
 	}

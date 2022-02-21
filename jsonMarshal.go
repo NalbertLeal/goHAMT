@@ -1,6 +1,8 @@
 package hamt
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 func (h *HAMT[Data]) MarshalJSON() ([]byte, error) {
 	arr := []Data{}
@@ -18,21 +20,26 @@ func (h *HAMT[Data]) MarshalJSON() ([]byte, error) {
 
 func (h *HAMT[Data]) initDFS() chan interface{} {
 	c := make(chan interface{})
-	go dfsNodes(c, h.root, 5)
+	go h.dfsNodes(c, h.root, 5)
 	return c
 }
 
-func dfsNodes(c chan interface{}, n *node, height uint) {
+func (h *HAMT[Data]) dfsNodes(c chan interface{}, n *node, height uint) {
 	for i := 0; i < 32; i++ {
 		if n.data[i] != nil {
 			if height > 0 {
-				dfsNodes(c, n.data[i].(*node), height-1)
+				h.dfsNodes(c, n.data[i].(*node), height-1)
 			} else {
 				c <- n.data[i]
 			}
 		}
 	}
 	if height == 5 {
+		for i := 0; i < 32; i++ {
+			if h.tail.data[i] != nil {
+				c <- h.tail.data[i]
+			}
+		}
 		c <- nil
 	}
 }

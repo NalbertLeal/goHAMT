@@ -1,7 +1,5 @@
 package hamt
 
-import "fmt"
-
 type HAMT[Data any] struct {
 	root         *node
 	size         int
@@ -20,6 +18,10 @@ func NewHAMT[Data any]() *HAMT[Data] {
 		tailStart:    0,
 		tailEnd:      31,
 	}
+}
+
+func (h *HAMT[Data]) Size() int {
+	return h.size
 }
 
 func (old *HAMT[Data]) InsertAt(key int, data Data) (*HAMT[Data], error) {
@@ -91,7 +93,7 @@ func (old *HAMT[Data]) Append(data Data) (*HAMT[Data], error) {
 	}
 
 	index := (old.biggestIndex + 1) & MASK
-	if old.biggestIndex > 0 && index == 0 {
+	if old.tailEnd < (old.biggestIndex + 1) {
 		h := old.insertTailIntoTree(old.biggestIndex + 1)
 		h.size = h.size + 1
 		h.tail.data[index] = data
@@ -115,6 +117,27 @@ func (old *HAMT[Data]) Update(key int, data Data) (*HAMT[Data], error) {
 	if key > 1000000000 {
 		return nil, IndexOutOfBoundsError
 	}
+	if key > old.tailEnd {
+		return nil, IndexOutOfBoundsError
+	}
+
+	if key >= old.tailStart && key <= old.tailEnd {
+		index := key & MASK
+		if old.tail.data[index] == nil {
+			return nil, DataNotFoundError
+		}
+		h := NewHAMT[Data]()
+		h.root = old.root
+		h.size = old.size
+		h.biggestIndex = old.biggestIndex
+		h.tailStart = old.tailStart
+		h.tailEnd = old.tailEnd
+		h.tail = copyNode(old.tail)
+
+		h.tail.data[index] = data
+		return h, nil
+	}
+
 	h := NewHAMT[Data]()
 
 	h.root = copyNode(old.root)
@@ -122,7 +145,7 @@ func (old *HAMT[Data]) Update(key int, data Data) (*HAMT[Data], error) {
 	nextOld := old.root
 	index := 0
 	for level := SHIFT; level > 0; level -= BITS {
-		index = (int(key) >> level) & MASK
+		index = (key >> level) & MASK
 		if nextOld.data[index] == nil {
 			return nil, DataNotFoundError
 		} else {
@@ -132,6 +155,7 @@ func (old *HAMT[Data]) Update(key int, data Data) (*HAMT[Data], error) {
 		nextH = nextH.data[index].(*node)
 	}
 
+	index = key & MASK
 	nextH.data[index] = data
 
 	h.size = old.size + 1
@@ -179,7 +203,6 @@ func (h *HAMT[Data]) Get(key int) (Data, error) {
 	if key >= h.tailStart && key <= h.tailEnd {
 		index := key & MASK
 		if h.tail.data[index] == nil {
-			fmt.Println(h.tail)
 			return result, DataNotFoundError
 		}
 		result = h.tail.data[index].(Data)
@@ -229,7 +252,7 @@ func (old *HAMT[Data]) insertTailIntoTree(biggestIndex int) *HAMT[Data] {
 		}
 		nextH = nextH.data[index].(*node)
 	}
-	index = old.tailStart & MASK
+	index = (old.tailStart >> 5) & MASK
 	nextH.data[index] = old.tail
 
 	return h

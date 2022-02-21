@@ -74,6 +74,64 @@ func TestAppend(t *testing.T) {
 	}
 }
 
+func TestUpdate(t *testing.T) {
+	h := NewHAMT[int]()
+	h, _ = h.Append(89)
+	h, _ = h.Append(463)
+	h, _ = h.Append(34)
+	h, _ = h.Append(2)
+	h, _ = h.Append(9)
+
+	h2, err := h.Update(2, 90)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	d, err := h2.Get(2)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if d != 90 {
+		t.Errorf("90")
+		return
+	}
+
+	for i := 5; i < 90; i++ {
+		h, _ = h.Append(i)
+	}
+
+	h3, err := h.Update(47, 2)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	d2, err := h3.Get(47)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if d2 != 2 {
+		t.Errorf("d2 != 2: d2 = %d", d2)
+		return
+	}
+
+	h4, err := h.Update(68, 7)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	d3, err := h4.Get(68)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	if d3 != 7 {
+		t.Errorf("d3 != 7: d3 = %d", d2)
+		return
+	}
+}
+
 func TestGet(t *testing.T) {
 	h := NewHAMT[int]()
 	h2, err := h.Append(89)
